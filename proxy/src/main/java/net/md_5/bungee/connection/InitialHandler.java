@@ -354,7 +354,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         Preconditions.checkState( thisState == State.USERNAME, "Not expecting USERNAME" );
         this.loginRequest = loginRequest;
 
-        if ( getName().contains( "." ) )
+        if ( getName().contains( " " ) )
         {
             disconnect( bungee.getTranslation( "name_invalid" ) );
             return;
@@ -367,7 +367,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
 
         int limit = BungeeCord.getInstance().config.getPlayerLimit();
-        if ( limit > 0 && bungee.getOnlineCount() > limit )
+        if ( limit > 0 && bungee.getOnlineCount() >= limit )
         {
             disconnect( bungee.getTranslation( "proxy_full" ) );
             return;
@@ -529,7 +529,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                             userCon.setCompressionThreshold( BungeeCord.getInstance().config.getCompressionThreshold() );
                             userCon.init();
 
-                            unsafe.sendPacket( new LoginSuccess( getUniqueId().toString(), getName() ) ); // With dashes in between
+                            unsafe.sendPacket( new LoginSuccess( getUniqueId(), getName() ) );
                             ch.setProtocol( Protocol.GAME );
 
                             ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new UpstreamBridge( bungee, userCon ) );

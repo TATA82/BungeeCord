@@ -57,7 +57,7 @@ public final class ComponentBuilder
      */
     public ComponentBuilder(ComponentBuilder original)
     {
-        this( original.parts.toArray( new BaseComponent[ original.parts.size() ] ) );
+        this( original.parts.toArray( new BaseComponent[ 0 ] ) );
     }
 
     /**
@@ -321,6 +321,18 @@ public final class ComponentBuilder
     public ComponentBuilder color(ChatColor color)
     {
         getCurrentComponent().setColor( color );
+        return this;
+    }
+
+    /**
+     * Sets the font of the current part.
+     *
+     * @param font the new font
+     * @return this ComponentBuilder for chaining
+     */
+    public ComponentBuilder font(String font)
+    {
+        getCurrentComponent().setFont( font );
         return this;
     }
 

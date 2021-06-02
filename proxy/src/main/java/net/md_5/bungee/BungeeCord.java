@@ -90,12 +90,12 @@ import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
-import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
 import net.md_5.bungee.scheduler.BungeeScheduler;
 import net.md_5.bungee.util.CaseInsensitiveMap;
 import org.fusesource.jansi.AnsiConsole;
+import org.slf4j.impl.JDK14LoggerFactory;
 
 /**
  * Main BungeeCord proxy class.
@@ -216,6 +216,7 @@ public class BungeeCord extends ProxyServer
         consoleReader.addCompleter( new ConsoleCommandCompleter( this ) );
 
         logger = new BungeeLogger( "BungeeCord", "proxy.log", consoleReader );
+        JDK14LoggerFactory.LOGGER = logger;
         System.setErr( new PrintStream( new LoggingOutputStream( logger, Level.SEVERE ), true ) );
         System.setOut( new PrintStream( new LoggingOutputStream( logger, Level.INFO ), true ) );
 
@@ -707,14 +708,20 @@ public class BungeeCord extends ProxyServer
     public void broadcast(BaseComponent... message)
     {
         getConsole().sendMessage( BaseComponent.toLegacyText( message ) );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
+        for ( ProxiedPlayer player : getPlayers() )
+        {
+            player.sendMessage( message );
+        }
     }
 
     @Override
     public void broadcast(BaseComponent message)
     {
         getConsole().sendMessage( message.toLegacyText() );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
+        for ( ProxiedPlayer player : getPlayers() )
+        {
+            player.sendMessage( message );
+        }
     }
 
     public void addConnection(UserConnection con)

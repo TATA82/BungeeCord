@@ -1,11 +1,19 @@
 package net.md_5.bungee.protocol;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import se.llbit.nbt.NamedTag;
+import se.llbit.nbt.Tag;
 
 @RequiredArgsConstructor
 public abstract class DefinedPacket
@@ -25,16 +33,27 @@ public abstract class DefinedPacket
 
     public static String readString(ByteBuf buf)
     {
+        return readString( buf, Short.MAX_VALUE );
+    }
+
+    public static String readString(ByteBuf buf, int maxLen)
+    {
         int len = readVarInt( buf );
-        if ( len > Short.MAX_VALUE )
+        if ( len > maxLen * 4 )
         {
-            throw new OverflowPacketException( String.format( "Cannot receive string longer than Short.MAX_VALUE (got %s characters)", len ) );
+            throw new OverflowPacketException( String.format( "Cannot receive string longer than %d (got %d bytes)", maxLen * 4, len ) );
         }
 
         byte[] b = new byte[ len ];
         buf.readBytes( b );
 
-        return new String( b, Charsets.UTF_8 );
+        String s = new String( b, Charsets.UTF_8 );
+        if ( s.length() > maxLen )
+        {
+            throw new OverflowPacketException( String.format( "Cannot receive string longer than %d (got %d characters)", maxLen, s.length() ) );
+        }
+
+        return s;
     }
 
     public static void writeArray(byte[] b, ByteBuf buf)
@@ -193,6 +212,24 @@ public abstract class DefinedPacket
     public static UUID readUUID(ByteBuf input)
     {
         return new UUID( input.readLong(), input.readLong() );
+    }
+
+    public static Tag readTag(ByteBuf input)
+    {
+        Tag tag = NamedTag.read( new DataInputStream( new ByteBufInputStream( input ) ) );
+        Preconditions.checkArgument( !tag.isError(), "Error reading tag: %s", tag.error() );
+        return tag;
+    }
+
+    public static void writeTag(Tag tag, ByteBuf output)
+    {
+        try
+        {
+            tag.write( new DataOutputStream( new ByteBufOutputStream( output ) ) );
+        } catch ( IOException ex )
+        {
+            throw new RuntimeException( "Exception writing tag", ex );
+        }
     }
 
     public void read(ByteBuf buf)
